@@ -26,14 +26,25 @@
                     [:div#team-stats-wrapper :table#result :tbody :tr])))
 
 (defn scrape-all-rosters []
-  (map scrape-roster (get-links)))
+   (pmap scrape-roster (get-links)))
+  ; (into '() (r/map scrape-roster (get-links))))
 
-(defn print-player [player-data]
-  (println (str (clojure.string/replace player-data #"\n" "\t") "\n")))
+(defn format-player [player-data]
+  (str (clojure.string/replace player-data #"\n" "\t") "\n"))
 
-(defn get-team [team-data]
-  (map print-player team-data))
+(defn get-player [team-data]
+  (map format-player team-data))
+
+(defn get-team [all-teams-data]
+  (map get-player all-teams-data))
 
 (defn -main []
   (time (doall
-          (map get-team (scrape-all-rosters)))))
+          (get-team (scrape-all-rosters)))))
+
+; format returned by main
+; (
+;  ("team1-player1" "team1-player2" ...)
+;  ("team2-player1" "team2-player2" ...)
+;  ...
+; )
