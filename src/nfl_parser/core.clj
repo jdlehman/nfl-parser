@@ -1,5 +1,6 @@
 (ns nfl-parser.core
   (:require [net.cgrand.enlive-html :as html])
+  (:require [clojure.string :as string])
   (:gen-class))
 
 (def base-url "http://www.nfl.com")
@@ -12,7 +13,7 @@
                 [(html/attr-starts :href "/team")]))
 
 (defn get-roster-href [col]
-  (clojure.string/replace (str base-url
+  (string/replace (str base-url
                 (get-in (into {} col) [:attrs :href]))
                 #"profile" "roster"))
 
@@ -29,22 +30,60 @@
    (pmap scrape-roster (get-links)))
   ; (into '() (r/map scrape-roster (get-links))))
 
-(defn format-player [player-data]
-  (str (clojure.string/replace player-data #"\n" "\t") "\n"))
+(defn player-string-to-map
+  "Convert player to map"
+  [player-data]
+  (player-vector-to-map (player-string-to-vector player-data)))
+
+(defn player-vector-to-map
+  "Convert player vector to map with playername as key"
+  [[number name & rest :as player-data]]
+  {(player-name-to-key name) (zipmap [:number :name :position :status :height :weight :birth :experience :college] player-data)})
+
+(defn player-name-to-key
+  "Convert player name to key (:first-last)"
+  [name]
+  (keyword (string/replace
+             (string/trim name)
+             #", "
+             "-")))
+
+(defn player-string-to-vector
+  "Convert player string to vector"
+  [player-str]
+  (string/split
+    (string/trim player-str)
+    #"\n"))
 
 (defn get-player [team-data]
-  (map format-player team-data))
+  (into {} (map player-string-to-map team-data)))
 
 (defn get-team [all-teams-data]
-  (map get-player all-teams-data))
+  (into {} (map get-player all-teams-data)))
 
-(defn -main []
-  (time (doall
-          (get-team (scrape-all-rosters)))))
+(def players
+  (get-team (scrape-all-rosters)))
 
-; format returned by main
-; (
-;  ("team1-player1" "team1-player2" ...)
-;  ("team2-player1" "team2-player2" ...)
+(defn get-player-data [lookup-key]
+  (get-in players lookup-key))
+
+(defn -main [lookup-keys]
+  (if (vector? (first lookup-keys))
+    (map get-player-data lookup-keys)
+    (get-player-data lookup-keys)))
+
+; example usage
+; single player/item lookup
+; (-main [:Manning-Peyton])
+; (-main [:Manning-Peyton :college])
+; (-main [:Manning-Peyton :status])
+; multi player/item lookup
+; (-main [[:Romo-Tony :height] [:Manning-Peyton :height]])
+; (-main [[:Romo-Tony :height] [:Manning-Peyton :height] [:Brees-Drew :height]])
+
+; format returned by players
+; {
+;  {:player1 {:data1 x :data2 y}} {:player2 {:data1 x :data2 y}}
+;  {:player1 {:data1 x :data2 y}} {:player2 {:data1 x :data2 y}}
 ;  ...
-; )
+; }
