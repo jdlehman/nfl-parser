@@ -30,16 +30,6 @@
    (pmap scrape-roster (get-links)))
   ; (into '() (r/map scrape-roster (get-links))))
 
-(defn player-string-to-map
-  "Convert player to map"
-  [player-data]
-  (player-vector-to-map (player-string-to-vector player-data)))
-
-(defn player-vector-to-map
-  "Convert player vector to map with playername as key"
-  [[number name & rest :as player-data]]
-  {(player-name-to-key name) (zipmap [:number :name :position :status :height :weight :birth :experience :college] player-data)})
-
 (defn player-name-to-key
   "Convert player name to key (:first-last)"
   [name]
@@ -54,6 +44,16 @@
   (string/split
     (string/trim player-str)
     #"\n"))
+
+(defn player-vector-to-map
+  "Convert player vector to map with playername as key"
+  [[number name & rest :as player-data]]
+  {(player-name-to-key name) (zipmap [:number :name :position :status :height :weight :birth :experience :college] player-data)})
+
+(defn player-string-to-map
+  "Convert player to map"
+  [player-data]
+  (player-vector-to-map (player-string-to-vector player-data)))
 
 (defn get-player [team-data]
   (into {} (map player-string-to-map team-data)))
