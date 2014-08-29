@@ -1,6 +1,7 @@
 (ns nfl-parser.core
   (:require [net.cgrand.enlive-html :as html])
   (:require [clojure.string :as string])
+  (:require [clojure.core.reducers :as r])
   (:gen-class))
 
 (def base-url "http://www.nfl.com")
